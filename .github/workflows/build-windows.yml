@@ -1,0 +1,39 @@
+name: Build Windows .exe
+
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:   # bouton "Run workflow" manuel sur GitHub
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install pyinstaller pystray pillow
+
+      - name: Build .exe
+        run: |
+          pyinstaller --onefile --noconsole --name BosePresetBridge bridge.py
+
+      - name: Package with config.ini
+        run: |
+          copy config.ini dist\config.ini
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: BosePresetBridge-Windows
+          path: |
+            dist\BosePresetBridge.exe
+            dist\config.ini
+          retention-days: 30

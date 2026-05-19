@@ -1,0 +1,16 @@
+[Unit]
+Description=Bose SoundTouch Preset Bridge
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/bose-preset-bridge
+ExecStart=/usr/bin/python3 /opt/bose-preset-bridge/bridge.py
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

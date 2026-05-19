@@ -1,0 +1,33 @@
+bose_host: "192.168.1.38"
+bose_name: "Valentine"
+bose_mac: "0CAE7D5422F4"   # used to build the UPnP discovery URL
+
+presets:
+  1: "http://icecast.radiofrance.fr/franceinter-midfi.mp3"
+  2: "http://icecast.radiofrance.fr/franceinfo-midfi.mp3"
+  3: "http://icecast.radiofrance.fr/franceculture-midfi.mp3"
+  4: "http://icecast.radiofrance.fr/franceinterlamusiqueinter-midfi.mp3"
+  5: "http://icecast.radiofrance.fr/fipcultes-midfi.mp3"
+  6: "http://icecast.rtl.fr/rtl-1-44-128?listen=webCwsBCggNCQgLDQUGBAcGBg"
+
+preset_labels:
+  1: "France Inter"
+  2: "France Info"
+  3: "France Culture"
+  4: "La Musique d'Inter"
+  5: "FIP Cultes"
+  6: "RTL"
+
+preset_logos:
+  1: "https://charte.dnm.radiofrance.fr/logo/france-inter.svg"
+  2: "https://charte.dnm.radiofrance.fr/logo/franceinfo.svg"
+  3: "https://charte.dnm.radiofrance.fr/logo/france-culture.svg"
+  4: "https://charte.dnm.radiofrance.fr/logo/france-inter.svg"
+  5: "https://charte.dnm.radiofrance.fr/logo/fip.svg"
+  6: "https://upload.wikimedia.org/wikipedia/fr/thumb/a/a5/RTL_logo.svg/200px-RTL_logo.svg.png"
+
+web_port: 8888   # 0 pour désactiver
+
+reconnect_delay_seconds: 5
+reconnect_max_delay_seconds: 60
+log_level: "INFO"
