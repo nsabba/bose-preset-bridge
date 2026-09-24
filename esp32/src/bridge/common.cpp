@@ -26,7 +26,7 @@ bool methodValid(const String &m) { return m == "upnp" || m == "lir_direct"; }
 void settingsLoad() {
   Lock l;
   Preferences p;
-  p.begin("cfg", true);
+  p.begin("cfg", false);                // lecture-écriture : crée l'espace au premier démarrage
   for (int n = 1; n <= 6; n++) {
     const DefaultPreset &d = DEFAULT_PRESETS[n - 1];
     gCfg.presets[n].url = p.getString(key("u", n).c_str(), d.url);
@@ -87,9 +87,9 @@ static Preferences &st() {
   if (!open) open = p.begin("state", false);
   return p;
 }
-uint32_t getU(const char *k, uint32_t def) { Lock l; return st().getUInt(k, def); }
+uint32_t getU(const char *k, uint32_t def) { Lock l; return st().isKey(k) ? st().getUInt(k, def) : def; }
 void putU(const char *k, uint32_t v) { Lock l; st().putUInt(k, v); }
-String getS(const char *k, const String &def) { Lock l; return st().getString(k, def); }
+String getS(const char *k, const String &def) { Lock l; return st().isKey(k) ? st().getString(k, def) : def; }
 void putS(const char *k, const String &v) { Lock l; st().putString(k, v); }
 void remove(const char *k) { Lock l; st().remove(k); }
 }  // namespace persist

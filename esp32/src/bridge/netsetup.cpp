@@ -31,10 +31,11 @@ static void portal() {
     if (ip.fromString(pHost.getValue())) gCfg.hostFallback = pHost.getValue();
   }
   settingsSaveAll();
-  if (!ok) {
-    logf("Portail fermé sans connexion : redémarrage");
-    ESP.restart();
-  }
+  // Toujours redémarrer après le portail : son serveur web garde le port 80 et empêcherait
+  // la page du bridge de démarrer (constaté sur carte le 24/09 : « bind error -8 »).
+  logf(ok ? "Wi-Fi configuré : redémarrage" : "Portail fermé sans connexion : redémarrage");
+  delay(500);
+  ESP.restart();
 }
 
 void netBegin() {
