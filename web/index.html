@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>Presets SoundTouch</title>
+<!--
+  Settings page of bose-preset-bridge. One self-contained file, no framework, no external
+  dependency besides the catalogue and the logos. It only talks to the HTTP API described
+  in PROTOCOL.md, so the ESP32 version serves this exact file.
+-->
+<style>
+  :root {
+    --bg: #f4f4f1; --surface: #ffffff; --surface-2: #ecebe6; --text: #1c1c1a; --muted: #6b6a64;
+    --line: #dcdbd4; --accent: #1f5fbf; --accent-text: #ffffff; --ok: #1d7a46; --warn: #a15c00;
+    --bad: #b3261e; --focus: #1f5fbf55; --radius: 14px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #141413; --surface: #1f1f1d; --surface-2: #2a2a27; --text: #f1f0ea; --muted: #a3a29a;
+      --line: #3a3a36; --accent: #6ea3ff; --accent-text: #0b1a33; --ok: #5cc98a; --warn: #e3a34a;
+      --bad: #ff7b72; --focus: #6ea3ff55;
+    }
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font: 17px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    padding: 0 16px calc(96px + env(safe-area-inset-bottom));
+  }
+  main { max-width: 760px; margin: 0 auto; }
+  h1 { font-size: 1.35rem; margin: 0; }
+  h2 { font-size: 1.1rem; margin: 28px 0 12px; }
+  button, input { font: inherit; color: inherit; }
+  button { cursor: pointer; }
+  :focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+
+  header { padding: 18px 0 6px; }
+  .status { display: flex; align-items: center; gap: 8px; margin-top: 6px; color: var(--muted); font-size: .95rem; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--muted); flex: none; }
+  .dot.ok { background: var(--ok); } .dot.bad { background: var(--bad); } .dot.warn { background: var(--warn); }
+  .nowplaying { margin-top: 4px; font-weight: 600; min-height: 1.4em; }
+
+  .presets { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+  @media (min-width: 620px) { .presets { grid-template-columns: repeat(3, 1fr); } }
+  .preset {
+    position: relative; display: flex; flex-direction: column; align-items: center; gap: 8px;
+    padding: 14px 10px 12px; min-height: 150px; border-radius: var(--radius);
+    background: var(--surface); border: 2px solid var(--line); text-align: center;
+  }
+  .preset.selected { border-color: var(--accent); }
+  .preset.live { box-shadow: 0 0 0 3px color-mix(in srgb, var(--ok) 40%, transparent); }
+  .preset .num {
+    position: absolute; top: 8px; left: 8px; width: 28px; height: 28px; border-radius: 50%;
+    background: var(--surface-2); font-weight: 700; font-size: .95rem; line-height: 28px;
+  }
+  .preset .name { font-weight: 600; font-size: .98rem; overflow-wrap: anywhere; }
+  .preset .empty { color: var(--muted); }
+
+  .logo {
+    width: 72px; height: 72px; border-radius: 12px; background: #fff; flex: none;
+    display: grid; place-items: center; overflow: hidden; border: 1px solid var(--line);
+  }
+  .logo img { width: 100%; height: 100%; object-fit: contain; padding: 6px; }
+  .logo .initials { font-weight: 800; font-size: 1.4rem; color: #fff; }
+  .logo.sm { width: 56px; height: 56px; }
+
+  .editor { margin-top: 8px; padding: 16px; border-radius: var(--radius); background: var(--surface); border: 1px solid var(--line); }
+  .editor[hidden] { display: none; }
+  .editor-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .editor-head h2 { margin: 0; }
+  .choice { display: flex; align-items: center; gap: 12px; margin: 14px 0; padding: 10px; border-radius: 12px; background: var(--surface-2); }
+  .choice .txt { min-width: 0; }
+  .choice .n { font-weight: 700; }
+  .choice .u { color: var(--muted); font-size: .8rem; overflow-wrap: anywhere; }
+  .changed { color: var(--warn); font-size: .85rem; font-weight: 600; }
+
+  .tabs { display: flex; gap: 8px; margin: 8px 0 12px; }
+  .tab { flex: 1; min-height: 48px; border-radius: 12px; border: 2px solid var(--line); background: transparent; font-weight: 600; }
+  .tab[aria-selected="true"] { border-color: var(--accent); color: var(--accent); }
+
+  input[type=search], input[type=text], input[type=url] {
+    width: 100%; min-height: 50px; padding: 10px 14px; border-radius: 12px;
+    border: 2px solid var(--line); background: var(--bg);
+  }
+  label { display: block; margin: 12px 0 6px; font-weight: 600; font-size: .95rem; }
+  .chips { display: flex; gap: 8px; overflow-x: auto; padding: 10px 0; scrollbar-width: none; }
+  .chip { flex: none; min-height: 40px; padding: 0 14px; border-radius: 20px; border: 1px solid var(--line); background: var(--surface-2); }
+  .chip[aria-pressed="true"] { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
+
+  .catalog { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 10px; }
+  .radio {
+    display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 10px 4px;
+    border-radius: 12px; border: 2px solid transparent; background: var(--surface-2); min-height: 118px;
+  }
+  .radio .name { font-size: .8rem; line-height: 1.2; text-align: center; overflow-wrap: anywhere; }
+  .radio[aria-pressed="true"] { border-color: var(--accent); }
+  .hint { color: var(--muted); font-size: .9rem; margin: 8px 0; }
+
+  .btn {
+    min-height: 54px; padding: 0 18px; border-radius: 14px; border: 2px solid var(--line);
+    background: var(--surface); font-weight: 700;
+  }
+  .btn.primary { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
+  .btn.danger { color: var(--bad); }
+  .btn[disabled] { opacity: .5; cursor: default; }
+  .btn.small { min-height: 44px; padding: 0 14px; font-size: .95rem; }
+  .actionbar {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 5; display: flex; gap: 10px; justify-content: center;
+    padding: 12px 16px calc(12px + env(safe-area-inset-bottom)); background: var(--surface); border-top: 1px solid var(--line);
+  }
+  .actionbar[hidden] { display: none; }
+  .actionbar .btn { flex: 1; max-width: 260px; }
+
+  .speaker-actions { display: grid; gap: 10px; }
+  @media (min-width: 620px) { .speaker-actions { grid-template-columns: 1fr 1fr; } }
+  dl.details { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; font-size: .9rem; color: var(--muted); margin: 16px 0 0; }
+  dl.details dt { font-weight: 600; } dl.details dd { margin: 0; overflow-wrap: anywhere; }
+
+  .toast {
+    position: fixed; left: 50%; bottom: calc(96px + env(safe-area-inset-bottom)); transform: translateX(-50%);
+    max-width: min(92vw, 520px); padding: 12px 18px; border-radius: 12px; z-index: 10;
+    background: var(--text); color: var(--bg); font-weight: 600; box-shadow: 0 6px 24px #0004;
+  }
+  .toast[hidden] { display: none; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1 id="title">Enceinte</h1>
+    <div class="status"><span class="dot" id="dot"></span><span id="conn">Connexion…</span></div>
+    <div class="nowplaying" id="np"></div>
+  </header>
+
+  <h2>Les 6 presets</h2>
+  <div class="presets" id="presets"></div>
+
+  <section class="editor" id="editor" hidden>
+    <div class="editor-head">
+      <h2 id="ed-title">Preset</h2>
+      <button class="btn small" id="ed-play" type="button">▶ Écouter</button>
+    </div>
+    <div class="choice">
+      <div class="logo sm" id="ch-logo"></div>
+      <div class="txt">
+        <div class="n" id="ch-name"></div>
+        <div class="u" id="ch-url"></div>
+        <div class="changed" id="ch-changed" hidden>Pas encore enregistré</div>
+      </div>
+    </div>
+    <div class="tabs" role="tablist">
+      <button class="tab" role="tab" id="tab-cat" aria-selected="true" type="button">Catalogue</button>
+      <button class="tab" role="tab" id="tab-url" aria-selected="false" type="button">URL personnalisée</button>
+    </div>
+    <div id="pane-cat">
+      <input type="search" id="q" placeholder="Rechercher une radio" autocomplete="off">
+      <div class="chips" id="chips"></div>
+      <p class="hint" id="cat-msg">Chargement du catalogue…</p>
+      <div class="catalog" id="catalog"></div>
+    </div>
+    <div id="pane-url" hidden>
+      <label for="c-name">Nom affiché</label>
+      <input type="text" id="c-name" maxlength="64" placeholder="Ma radio">
+      <label for="c-url">Adresse du flux (MP3, de préférence http://)</label>
+      <input type="url" id="c-url" placeholder="http://…/stream.mp3" inputmode="url" autocapitalize="off" spellcheck="false">
+      <label for="c-logo">Logo (facultatif)</label>
+      <input type="url" id="c-logo" placeholder="https://…/logo.png" inputmode="url" autocapitalize="off" spellcheck="false">
+    </div>
+  </section>
+
+  <h2>Enceinte</h2>
+  <div class="speaker-actions">
+    <button class="btn" id="rewrite" type="button">Réécrire les presets dans l'enceinte</button>
+    <button class="btn danger" id="reboot" type="button">Redémarrer l'enceinte</button>
+  </div>
+  <dl class="details" id="details"></dl>
+</main>
+
+<div class="actionbar" id="actionbar" hidden>
+  <button class="btn" id="test" type="button">▶ Tester</button>
+  <button class="btn primary" id="save" type="button">Enregistrer</button>
+</div>
+<div class="toast" id="toast" role="status" hidden></div>
+
+<script>
+"use strict";
+const $ = (id) => document.getElementById(id);
+const S = { presets: [], catalog: null, status: null, sel: null, pending: null, tab: "cat", tag: "", q: "" };
+const TAGS = { "radio-france": "Radio France", fip: "FIP", webradio: "Webradios", classique: "Classique",
+  info: "Info", generaliste: "Généralistes", musique: "Musique", chanson: "Chanson" };
+const STATES = { idle: "", starting: "Démarrage…", playing: "", retrying: "Nouvel essai…",
+  rebooting: "Redémarrage de l'enceinte…", failed: "Échec de lecture" };
+
+async function api(method, path, body) {
+  const opt = { method, headers: {} };
+  if (body !== undefined) { opt.headers["Content-Type"] = "application/json"; opt.body = JSON.stringify(body); }
+  const r = await fetch(path, opt);
+  let data = {};
+  try { data = await r.json(); } catch (e) { /* empty body */ }
+  if (!r.ok) throw new Error(data.message || data.error || ("HTTP " + r.status));
+  return data;
+}
+
+let toastTimer;
+function toast(msg, ms) {
+  const t = $("toast"); t.textContent = msg; t.hidden = false;
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => { t.hidden = true; }, ms || 3500);
+}
+
+function el(tag, cls, text) {
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (text !== undefined) e.textContent = text;
+  return e;
+}
+
+function hue(s) { let h = 0; for (const c of s) h = (h * 31 + c.charCodeAt(0)) % 360; return h; }
+function initials(name) {
+  const w = (name || "?").replace(/[^\p{L}\p{N} ]/gu, " ").trim().split(/\s+/);
+  return ((w[0] || "?")[0] + (w[1] ? w[1][0] : (w[0] || "").slice(1, 2))).toUpperCase();
+}
+// urls: one URL or a list tried in order; initials on a coloured tile when none loads.
+function fillLogo(box, urls, name) {
+  const list = [].concat(urls).filter(Boolean);
+  box.replaceChildren();
+  box.style.background = "";
+  const next = () => {
+    const url = list.shift();
+    if (!url) {
+      box.replaceChildren(el("span", "initials", initials(name)));
+      box.style.background = "hsl(" + hue(name || "?") + " 45% 40%)";
+      return;
+    }
+    const img = new Image(); img.alt = ""; img.referrerPolicy = "no-referrer";
+    img.onerror = next; img.src = url; box.replaceChildren(img);
+  };
+  next();
+}
+function logo(urls, name, cls) { const b = el("div", "logo" + (cls ? " " + cls : "")); fillLogo(b, urls, name); return b; }
+// Logos of a preset: its own, then the catalogue one for the same stream (old configs have dead logo URLs).
+function logosFor(p) {
+  const c = S.catalog && S.catalog.find((r) => r.stream_url === p.stream_url);
+  return [p.logo_url, c && c.logo_url];
+}
+
+// ---------- presets ----------
+let presetsKey = "";
+function renderPresets() {
+  const liveId = S.status && S.status.playing ? S.status.playing.id : null;
+  // Rebuild only when something changed: a rebuild during a tap would swallow the tap.
+  const key = JSON.stringify([S.presets, S.sel, liveId, !!S.catalog]);
+  if (key === presetsKey) return;
+  presetsKey = key;
+  const box = $("presets"); box.replaceChildren();
+  for (const p of S.presets) {
+    const b = el("button", "preset"); b.type = "button";
+    if (p.id === S.sel) b.classList.add("selected");
+    if (p.id === liveId && p.stream_url) b.classList.add("live");
+    b.appendChild(el("span", "num", String(p.id)));
+    b.appendChild(logo(logosFor(p), p.name || "?"));
+    b.appendChild(el("span", "name" + (p.stream_url ? "" : " empty"), p.stream_url ? (p.name || "Sans nom") : "Vide"));
+    b.setAttribute("aria-label", "Preset " + p.id + " : " + (p.name || "vide"));
+    b.onclick = () => select(p.id);
+    box.appendChild(b);
+  }
+}
+
+function select(id) {
+  S.sel = id;
+  const p = S.presets.find((x) => x.id === id);
+  S.pending = { name: p.name, stream_url: p.stream_url, logo_url: p.logo_url };
+  $("editor").hidden = false; $("actionbar").hidden = false;
+  $("ed-title").textContent = "Preset " + id;
+  $("ed-play").disabled = !p.stream_url;
+  $("c-name").value = p.name || ""; $("c-url").value = p.stream_url || ""; $("c-logo").value = p.logo_url || "";
+  const inCatalog = S.catalog && S.catalog.some((r) => r.stream_url === p.stream_url);
+  setTab(p.stream_url && S.catalog && !inCatalog ? "url" : "cat");
+  renderPresets(); renderChoice(); renderCatalog();
+  $("editor").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function renderChoice() {
+  const p = S.pending, saved = S.presets.find((x) => x.id === S.sel);
+  fillLogo($("ch-logo"), logosFor(p), p.name || "?");
+  $("ch-name").textContent = p.stream_url ? (p.name || "Sans nom") : "Aucune radio choisie";
+  $("ch-url").textContent = p.stream_url || "";
+  const changed = saved && (saved.name !== p.name || saved.stream_url !== p.stream_url || saved.logo_url !== p.logo_url);
+  $("ch-changed").hidden = !changed;
+  $("save").disabled = !changed || !p.stream_url || !p.name;
+  $("test").disabled = !p.stream_url;
+}
+
+function setTab(tab) {
+  S.tab = tab;
+  $("tab-cat").setAttribute("aria-selected", tab === "cat");
+  $("tab-url").setAttribute("aria-selected", tab === "url");
+  $("pane-cat").hidden = tab !== "cat"; $("pane-url").hidden = tab !== "url";
+}
+
+// ---------- catalogue ----------
+function renderChips() {
+  const box = $("chips"); box.replaceChildren();
+  const present = new Set(); (S.catalog || []).forEach((r) => (r.tags || []).forEach((t) => present.add(t)));
+  const tags = [""].concat(Object.keys(TAGS).filter((t) => present.has(t)));
+  for (const t of tags) {
+    const c = el("button", "chip", t ? TAGS[t] : "Toutes"); c.type = "button";
+    c.setAttribute("aria-pressed", S.tag === t);
+    c.onclick = () => { S.tag = t; renderChips(); renderCatalog(); };
+    box.appendChild(c);
+  }
+}
+
+function norm(s) { return (s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase(); }
+
+function renderCatalog() {
+  const box = $("catalog"); box.replaceChildren();
+  if (!S.catalog) return;
+  const q = norm(S.q);
+  const list = S.catalog.filter((r) => (!S.tag || (r.tags || []).includes(S.tag)) && (!q || norm(r.name).includes(q)));
+  $("cat-msg").textContent = list.length ? "Touchez une radio pour la choisir." : "Aucune radio ne correspond.";
+  for (const r of list) {
+    const b = el("button", "radio"); b.type = "button";
+    b.setAttribute("aria-pressed", S.pending && S.pending.stream_url === r.stream_url);
+    b.appendChild(logo(r.logo_url, r.name, "sm"));
+    b.appendChild(el("span", "name", r.name));
+    b.onclick = () => {
+      S.pending = { name: r.name, stream_url: r.stream_url, logo_url: r.logo_url || "" };
+      $("c-name").value = r.name; $("c-url").value = r.stream_url; $("c-logo").value = r.logo_url || "";
+      renderChoice(); renderCatalog();
+    };
+    box.appendChild(b);
+  }
+}
+
+async function loadCatalog(url) {
+  const sources = [url, "/catalog/radios.json"].filter(Boolean);
+  for (const src of sources) {
+    try {
+      const r = await fetch(src, { cache: "no-cache" });
+      if (!r.ok) continue;
+      const d = await r.json();
+      const list = Array.isArray(d) ? d : d.radios;
+      if (Array.isArray(list) && list.length) {
+        S.catalog = list.filter((x) => x && x.name && x.stream_url);
+        renderChips(); renderCatalog(); renderPresets();
+        return;
+      }
+    } catch (e) { /* try next source */ }
+  }
+  $("cat-msg").textContent = "Catalogue indisponible : utilisez « URL personnalisée ».";
+}
+
+// ---------- custom URL ----------
+function onCustomInput() {
+  S.pending = { name: $("c-name").value.trim(), stream_url: $("c-url").value.trim(), logo_url: $("c-logo").value.trim() };
+  renderChoice();
+}
+
+// ---------- status ----------
+function fmtDate(iso) {
+  if (!iso) return "jamais";
+  const d = new Date(iso);
+  return isNaN(d) ? iso : d.toLocaleString("fr-FR", { dateStyle: "short", timeStyle: "short" });
+}
+
+function renderStatus() {
+  const s = S.status; if (!s) return;
+  $("title").textContent = s.speaker.name || "Enceinte";
+  document.title = "Presets – " + (s.speaker.name || "SoundTouch");
+  const np = s.now_playing;
+  let dot = "bad", conn = "Enceinte injoignable";
+  if (s.rebooting) { dot = "warn"; conn = "Redémarrage de l'enceinte (environ 2 min)…"; }
+  else if (s.ws_connected) { dot = "ok"; conn = "Enceinte connectée"; }
+  else if (np) { dot = "warn"; conn = "Enceinte joignable, événements non connectés"; }
+  $("dot").className = "dot " + dot; $("conn").textContent = conn;
+
+  let line = "";
+  if (np) {
+    if (np.source === "STANDBY") line = "En veille";
+    else if (np.play_status === "PLAY_STATE") line = "▶ " + (np.item_name || np.source);
+    else if (np.play_status === "BUFFERING_STATE") line = "Chargement : " + (np.item_name || "");
+    else if (np.source === "INVALID_SOURCE" || np.source === "SETUP") line = "Aucune lecture";
+    else line = np.source + (np.play_status ? " · " + np.play_status : "");
+  }
+  const st = STATES[s.player.state];
+  if (st) line = st + (line ? " — " + line : "");
+  $("np").textContent = line;
+
+  const d = $("details"); d.replaceChildren();
+  const add = (k, v) => { d.appendChild(el("dt", "", k)); d.appendChild(el("dd", "", v)); };
+  add("Adresse", s.speaker.host);
+  add("Dernier preset", s.last_preset ? s.last_preset.id + " · " + s.last_preset.name + " · " + fmtDate(s.last_preset.at) : "—");
+  add("Dernier redémarrage auto", fmtDate(s.last_auto_reboot));
+  add("Presets dans l'enceinte", s.speaker_presets_cloud.length
+    ? "encore sur le cloud Bose : " + s.speaker_presets_cloud.join(", ") : "OK (aucun lien vers le cloud)");
+  if (s.player.message) add("Lecture", s.player.message);
+  add("Version", s.version);
+  $("rewrite").disabled = s.preset_write_method === "none";
+  $("reboot").disabled = !!s.rebooting;
+}
+
+async function refreshStatus() {
+  try {
+    const first = !S.status;
+    S.status = await api("GET", "/api/status");
+    renderStatus(); renderPresets();
+    if (first) loadCatalog(S.status.catalog_url);
+  } catch (e) {
+    $("dot").className = "dot bad"; $("conn").textContent = "Bridge injoignable";
+  }
+}
+
+async function loadPresets() {
+  const d = await api("GET", "/api/presets");
+  S.presets = d.presets; renderPresets();
+}
+
+// ---------- actions ----------
+$("tab-cat").onclick = () => setTab("cat");
+$("tab-url").onclick = () => setTab("url");
+$("q").oninput = (e) => { S.q = e.target.value; renderCatalog(); };
+for (const id of ["c-name", "c-url", "c-logo"]) $(id).oninput = onCustomInput;
+
+$("test").onclick = async () => {
+  try {
+    await api("POST", "/api/test", { stream_url: S.pending.stream_url, name: S.pending.name, logo_url: S.pending.logo_url });
+    toast("Lecture de « " + (S.pending.name || "la radio") + " » sur l'enceinte…");
+    setTimeout(refreshStatus, 2500);
+  } catch (e) { toast("Test impossible : " + e.message, 5000); }
+};
+
+$("ed-play").onclick = async () => {
+  try { await api("POST", "/api/play/" + S.sel); toast("Lecture du preset " + S.sel + "…"); setTimeout(refreshStatus, 2500); }
+  catch (e) { toast("Lecture impossible : " + e.message, 5000); }
+};
+
+$("save").onclick = async () => {
+  const btn = $("save"); btn.disabled = true;
+  try {
+    const r = await api("PUT", "/api/presets/" + S.sel, S.pending);
+    await loadPresets(); select(S.sel);
+    const sp = r.speaker || "";
+    toast(sp === "written" ? "Preset " + S.sel + " enregistré, enceinte à jour ✓"
+      : sp.startsWith("failed") ? "Enregistré, mais l'enceinte n'a pas été mise à jour (" + sp + ")"
+      : "Preset " + S.sel + " enregistré", 5000);
+    refreshStatus();
+  } catch (e) { toast("Enregistrement impossible : " + e.message, 6000); renderChoice(); }
+};
+
+$("rewrite").onclick = async () => {
+  const btn = $("rewrite"); btn.disabled = true;
+  try {
+    const r = await api("POST", "/api/rewrite-speaker-presets");
+    toast(r.ok ? "Les 6 presets de l'enceinte sont à jour ✓" : "Réécriture incomplète", 5000);
+  } catch (e) { toast("Réécriture impossible : " + e.message, 6000); }
+  btn.disabled = false; refreshStatus();
+};
+
+$("reboot").onclick = async () => {
+  if (!confirm("Redémarrer l'enceinte ? Elle sera muette pendant environ 2 minutes.")) return;
+  try { await api("POST", "/api/reboot-speaker"); toast("Redémarrage envoyé (environ 2 min)", 5000); refreshStatus(); }
+  catch (e) { toast("Redémarrage impossible : " + e.message, 5000); }
+};
+
+loadPresets().catch(() => toast("Impossible de lire les presets", 5000));
+refreshStatus();
+setInterval(refreshStatus, 5000);
+</script>
+</body>
+</html>

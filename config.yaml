@@ -8,7 +8,7 @@ presets:
   3: "http://icecast.radiofrance.fr/franceculture-midfi.mp3"
   4: "http://icecast.radiofrance.fr/franceinterlamusiqueinter-midfi.mp3"
   5: "http://icecast.radiofrance.fr/fipcultes-midfi.mp3"
-  6: "http://icecast.rtl.fr/rtl-1-44-128?listen=webCwsBCggNCQgLDQUGBAcGBg"
+  6: "http://streaming-ice.audiomeans.fr/rtl/feed-rtl-mp3-128"
 
 preset_labels:
   1: "France Inter"
@@ -19,15 +19,26 @@ preset_labels:
   6: "RTL"
 
 preset_logos:
-  1: "https://charte.dnm.radiofrance.fr/logo/france-inter.svg"
-  2: "https://charte.dnm.radiofrance.fr/logo/franceinfo.svg"
-  3: "https://charte.dnm.radiofrance.fr/logo/france-culture.svg"
-  4: "https://charte.dnm.radiofrance.fr/logo/france-inter.svg"
-  5: "https://charte.dnm.radiofrance.fr/logo/fip.svg"
-  6: "https://upload.wikimedia.org/wikipedia/fr/thumb/a/a5/RTL_logo.svg/200px-RTL_logo.svg.png"
+  1: "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/a0/France_Inter_logo_2021.svg/250px-France_Inter_logo_2021.svg.png"
+  2: "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/03/Franceinfo.svg/250px-Franceinfo.svg.png"
+  3: "https://thumb.wikimedia.org/wikipedia/commons/thumb/d/d6/France_Culture_logo_2021.svg/250px-France_Culture_logo_2021.svg.png"
+  4: "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/a0/France_Inter_logo_2021.svg/250px-France_Inter_logo_2021.svg.png"
+  5: "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/16/FIP_logo_2021.svg/250px-FIP_logo_2021.svg.png"
+  6: "https://thumb.wikimedia.org/wikipedia/commons/thumb/8/8f/RTL_Frankreich.svg/250px-RTL_Frankreich.svg.png"
 
 web_port: 8888   # 0 pour désactiver
 
 reconnect_delay_seconds: 5
 reconnect_max_delay_seconds: 60
 log_level: "INFO"
+
+# --- V2 (toutes facultatives, valeurs par defaut ci-dessous) ---
+# catalog_url: "https://raw.githubusercontent.com/nsabba/bose-preset-bridge/main/catalog/radios.json"
+# debounce_seconds: 3
+# watchdog: true
+# watchdog_timeout_seconds: 10
+# auto_reboot: true
+# auto_reboot_min_interval_seconds: 900
+# preset_write_method: "upnp"        # upnp | lir_direct | lir_local | none
+# rewrite_presets_on_startup: true
+# firewall_check: true

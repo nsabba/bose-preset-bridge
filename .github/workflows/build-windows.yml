@@ -2,7 +2,7 @@ name: Build Windows .exe
 
 on:
   push:
-    branches: [main, master]
+    branches: [main, master, v2]
   workflow_dispatch:   # bouton "Run workflow" manuel sur GitHub
 
 jobs:
@@ -21,13 +21,34 @@ jobs:
           pip install -r requirements.txt
           pip install pyinstaller pystray pillow
 
-      - name: Build .exe
-        run: |
-          pyinstaller --onefile --noconsole --name BosePresetBridge bridge.py
+      - name: Tests
+        run: python -m unittest discover -s tests -v
 
-      - name: Package with config.ini
+      - name: Build BosePresetBridge.exe
+        run: >
+          pyinstaller --onefile --noconsole --name BosePresetBridge
+          --add-data "web/index.html;web"
+          --add-data "catalog/radios.json;catalog"
+          bridge.py
+
+      - name: Build ProbePresets.exe (console)
+        run: pyinstaller --onefile --console --name ProbePresets probe_presets.py
+
+      - name: Smoke test
+        shell: pwsh
         run: |
-          copy config.ini dist\config.ini
+          $p = Start-Process -FilePath dist\BosePresetBridge.exe -ArgumentList "--self-check" -Wait -PassThru
+          if ($p.ExitCode -ne 0) { throw "BosePresetBridge --self-check failed ($($p.ExitCode))" }
+          dist\ProbePresets.exe --help
+          if ($LASTEXITCODE -ne 0) { throw "ProbePresets --help failed" }
+
+      - name: Package
+        shell: cmd
+        run: |
+          copy config.ini dist\config.example.ini
+          copy install_startup.bat dist\
+          copy uninstall_startup.bat dist\
+          copy install_firewall.bat dist\
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -35,5 +56,9 @@ jobs:
           name: BosePresetBridge-Windows
           path: |
             dist\BosePresetBridge.exe
-            dist\config.ini
+            dist\ProbePresets.exe
+            dist\config.example.ini
+            dist\install_startup.bat
+            dist\uninstall_startup.bat
+            dist\install_firewall.bat
           retention-days: 30
