@@ -118,6 +118,10 @@
   @media (min-width: 620px) { .speaker-actions { grid-template-columns: 1fr 1fr; } }
   dl.details { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; font-size: .9rem; color: var(--muted); margin: 16px 0 0; }
   dl.details dt { font-weight: 600; } dl.details dd { margin: 0; overflow-wrap: anywhere; }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
+  .row .btn { flex: 1; min-width: 150px; }
+  pre.log { max-height: 60vh; overflow: auto; padding: 10px; border-radius: 12px; background: var(--surface);
+    border: 1px solid var(--line); font-size: .75rem; line-height: 1.35; white-space: pre-wrap; overflow-wrap: anywhere; }
 
   .toast {
     position: fixed; left: 50%; bottom: calc(96px + env(safe-area-inset-bottom)); transform: translateX(-50%);
@@ -177,6 +181,37 @@
     <button class="btn danger" id="reboot" type="button">Redémarrer l'enceinte</button>
   </div>
   <dl class="details" id="details"></dl>
+
+  <!-- Sections affichées seulement si /api/status annonce la fonction dans "features" (version ESP32) -->
+  <section id="sec-device" hidden>
+    <h2>Boîtier</h2>
+    <dl class="details" id="device"></dl>
+  </section>
+  <section id="sec-settings" hidden>
+    <h2>Réglages du boîtier</h2>
+    <label for="s-host">IP de secours de l'enceinte (si elle n'est pas trouvée automatiquement)</label>
+    <input type="text" id="s-host" inputmode="decimal" autocomplete="off" placeholder="192.168.1.17">
+    <label for="s-mac">Adresse MAC de l'enceinte (facultatif, 12 caractères)</label>
+    <input type="text" id="s-mac" autocapitalize="characters" autocomplete="off" spellcheck="false">
+    <div class="row">
+      <button class="btn" id="s-save" type="button">Enregistrer les réglages</button>
+      <button class="btn" id="s-discover" type="button">Rechercher l'enceinte</button>
+    </div>
+  </section>
+  <section id="sec-ota" hidden>
+    <h2>Mise à jour du boîtier</h2>
+    <label for="ota-file">Fichier firmware (.bin)</label>
+    <input type="file" id="ota-file" accept=".bin">
+    <label for="ota-pw">Mot de passe des mises à jour</label>
+    <input type="text" id="ota-pw" autocomplete="off" autocapitalize="off" spellcheck="false" style="-webkit-text-security: disc">
+    <div class="row"><button class="btn" id="ota-send" type="button">Installer la mise à jour</button></div>
+    <p class="hint" id="ota-msg"></p>
+  </section>
+  <section id="sec-log" hidden>
+    <h2>Journal</h2>
+    <div class="row"><button class="btn" id="log-load" type="button">Afficher le journal</button></div>
+    <pre class="log" id="log" hidden></pre>
+  </section>
 </main>
 
 <div class="actionbar" id="actionbar" hidden>
@@ -400,7 +435,91 @@ function renderStatus() {
   add("Version", s.version);
   $("rewrite").disabled = s.preset_write_method === "none";
   $("reboot").disabled = !!s.rebooting;
+  renderDevice(s);
 }
+
+// ---------- fonctions de la version ESP32 (détectées via status.features) ----------
+function has(feature) { return !!(S.status && (S.status.features || []).includes(feature)); }
+
+function fmtUptime(sec) {
+  const d = Math.floor(sec / 86400), h = Math.floor(sec / 3600) % 24, m = Math.floor(sec / 60) % 60;
+  return (d ? d + " j " : "") + (d || h ? h + " h " : "") + m + " min";
+}
+
+let settingsLoaded = false;
+function renderDevice(s) {
+  $("sec-device").hidden = !has("device");
+  $("sec-settings").hidden = !has("settings");
+  $("sec-ota").hidden = !has("ota");
+  $("sec-log").hidden = !has("log");
+  if (has("device") && s.device) {
+    const d = $("device"); d.replaceChildren();
+    const add = (k, v) => { d.appendChild(el("dt", "", k)); d.appendChild(el("dd", "", v)); };
+    const dv = s.device;
+    add("Allumé depuis", fmtUptime(dv.uptime_s));
+    add("Dernier démarrage", dv.reset_reason + " (n° " + dv.boot_count + ")");
+    add("Wi-Fi", (dv.ssid || "?") + " · " + dv.rssi + " dBm");
+    add("Adresse", dv.hostname + " · " + dv.ip);
+    add("Mémoire libre", Math.round(dv.free_heap / 1024) + " Ko (min. " + Math.round(dv.min_free_heap / 1024) + " Ko)");
+    add("Enceinte", s.speaker.host + (dv.speaker_discovered ? " (trouvée automatiquement)" : " (IP de secours)"));
+    add("Heure", dv.time_synced ? "synchronisée" : "inconnue (pas d'accès NTP)");
+  }
+  if (has("settings") && !settingsLoaded) {
+    settingsLoaded = true;
+    api("GET", "/api/settings").then((c) => { $("s-host").value = c.speaker_host_fallback || ""; $("s-mac").value = c.speaker_mac || ""; })
+      .catch(() => { settingsLoaded = false; });
+  }
+}
+
+// L'ESP32 écrit dans l'enceinte en tâche de fond : il répond « pending » et publie le
+// résultat dans status.last_rewrite. On attend que ce résultat change (30 s max).
+async function waitRewrite(before) {
+  for (let i = 0; i < 20; i++) {
+    await new Promise((res) => setTimeout(res, 1500));
+    try {
+      const s = await api("GET", "/api/status");
+      S.status = s; renderStatus();
+      if (s.last_rewrite && JSON.stringify(s.last_rewrite) !== before) return s.last_rewrite;
+    } catch (e) { /* on réessaie */ }
+  }
+  return null;
+}
+function rewriteKey() { return JSON.stringify(S.status ? S.status.last_rewrite : null); }
+
+$("s-save").onclick = async () => {
+  try {
+    await api("PUT", "/api/settings", { speaker_host_fallback: $("s-host").value.trim(), speaker_mac: $("s-mac").value.trim() });
+    toast("Réglages enregistrés ✓");
+  } catch (e) { toast("Réglages refusés : " + e.message, 5000); }
+};
+$("s-discover").onclick = async () => {
+  try { await api("POST", "/api/discover"); toast("Recherche de l'enceinte…"); setTimeout(refreshStatus, 4500); }
+  catch (e) { toast("Recherche impossible : " + e.message, 5000); }
+};
+$("log-load").onclick = async () => {
+  try {
+    const d = await api("GET", "/api/log");
+    const pre = $("log"); pre.hidden = false; pre.textContent = d.lines.join("\n");
+    pre.scrollTop = pre.scrollHeight; $("log-load").textContent = "Rafraîchir le journal";
+  } catch (e) { toast("Journal indisponible : " + e.message, 5000); }
+};
+$("ota-send").onclick = () => {
+  const f = $("ota-file").files[0], msg = $("ota-msg");
+  if (!f) { toast("Choisissez d'abord le fichier .bin"); return; }
+  const fd = new FormData(); fd.append("firmware", f, f.name);
+  const x = new XMLHttpRequest();
+  x.open("POST", "/api/ota");
+  x.setRequestHeader("X-OTA-Password", $("ota-pw").value);
+  x.upload.onprogress = (e) => { if (e.lengthComputable) msg.textContent = "Envoi : " + Math.round(100 * e.loaded / e.total) + " %"; };
+  x.onload = () => {
+    let d = {}; try { d = JSON.parse(x.responseText); } catch (e) { /* vide */ }
+    if (x.status === 200) { msg.textContent = "Mise à jour installée, le boîtier redémarre…"; setTimeout(() => location.reload(), 15000); }
+    else msg.textContent = "Échec : " + (d.message || d.error || ("HTTP " + x.status));
+    $("ota-send").disabled = false;
+  };
+  x.onerror = () => { msg.textContent = "Échec de l'envoi"; $("ota-send").disabled = false; };
+  $("ota-send").disabled = true; x.send(fd);
+};
 
 async function refreshStatus() {
   try {
@@ -440,9 +559,16 @@ $("ed-play").onclick = async () => {
 $("save").onclick = async () => {
   const btn = $("save"); btn.disabled = true;
   try {
+    const before = rewriteKey();
     const r = await api("PUT", "/api/presets/" + S.sel, S.pending);
     await loadPresets(); select(S.sel);
-    const sp = r.speaker || "";
+    let sp = r.speaker || "";
+    if (sp === "pending") {
+      toast("Preset " + S.sel + " enregistré, écriture dans l'enceinte…", 30000);
+      const lr = await waitRewrite(before);
+      const res = lr && lr.results ? lr.results[String(S.sel)] : null;
+      sp = res ? (res.ok ? "written" : "failed: " + res.message) : "failed: pas de réponse";
+    }
     toast(sp === "written" ? "Preset " + S.sel + " enregistré, enceinte à jour ✓"
       : sp.startsWith("failed") ? "Enregistré, mais l'enceinte n'a pas été mise à jour (" + sp + ")"
       : "Preset " + S.sel + " enregistré", 5000);
@@ -453,7 +579,9 @@ $("save").onclick = async () => {
 $("rewrite").onclick = async () => {
   const btn = $("rewrite"); btn.disabled = true;
   try {
-    const r = await api("POST", "/api/rewrite-speaker-presets");
+    const before = rewriteKey();
+    let r = await api("POST", "/api/rewrite-speaker-presets");
+    if (r.pending) { toast("Écriture des presets dans l'enceinte…", 30000); r = (await waitRewrite(before)) || { ok: false }; }
     toast(r.ok ? "Les 6 presets de l'enceinte sont à jour ✓" : "Réécriture incomplète", 5000);
   } catch (e) { toast("Réécriture impossible : " + e.message, 6000); }
   btn.disabled = false; refreshStatus();
