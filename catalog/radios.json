@@ -1,0 +1,404 @@
+{
+  "version": 1,
+  "updated": "2026-09-24",
+  "radios": [
+    {
+      "id": "france-inter",
+      "name": "France Inter",
+      "stream_url": "http://icecast.radiofrance.fr/franceinter-midfi.mp3",
+      "logo_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/a0/France_Inter_logo_2021.svg/250px-France_Inter_logo_2021.svg.png",
+      "tags": [
+        "radio-france",
+        "generaliste"
+      ]
+    },
+    {
+      "id": "franceinfo",
+      "name": "franceinfo",
+      "stream_url": "http://icecast.radiofrance.fr/franceinfo-midfi.mp3",
+      "logo_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/03/Franceinfo.svg/250px-Franceinfo.svg.png",
+      "tags": [
+        "radio-france",
+        "info"
+      ]
+    },
+    {
+      "id": "france-culture",
+      "name": "France Culture",
+      "stream_url": "http://icecast.radiofrance.fr/franceculture-midfi.mp3",
+      "logo_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/d/d6/France_Culture_logo_2021.svg/250px-France_Culture_logo_2021.svg.png",
+      "tags": [
+        "radio-france",
+        "culture"
+      ]
+    },
+    {
+      "id": "france-musique",
+      "name": "France Musique",
+      "stream_url": "http://icecast.radiofrance.fr/francemusique-midfi.mp3",
+      "logo_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/6/6c/France_Musique_logo_2021.svg/250px-France_Musique_logo_2021.svg.png",
+      "tags": [
+        "radio-france",
+        "classique"
+      ]
+    },
+    {
+      "id": "fip",
+      "name": "FIP",
+      "stream_url": "http://icecast.radiofrance.fr/fip-midfi.mp3",
+      "logo_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/16/FIP_logo_2021.svg/250px-FIP_logo_2021.svg.png",
+      "tags": [
+        "radio-france",
+        "musique",
+        "fip"
+      ]
+    },
+    {
+      "id": "la-musique-d-inter",
+      "name": "La Musique d'Inter",
+      "stream_url": "http://icecast.radiofrance.fr/franceinterlamusiqueinter-midfi.mp3",
+      "logo_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/a0/France_Inter_logo_2021.svg/250px-France_Inter_logo_2021.svg.png",
+      "tags": [
+        "radio-france",
+        "musique"
+      ]
+    },
+    {
+      "id": "mouv",
+      "name": "Mouv'",
+      "stream_url": "http://icecast.radiofrance.fr/mouv-midfi.mp3",
+      "logo_url": "https://thumb.wikimedia.org/wikipedia/fr/thumb/f/ff/Logo_de_Mouv%27_2021.svg/250px-Logo_de_Mouv%27_2021.svg.png",
+      "tags": [
+        "radio-france",
+        "musique"
+      ]
+    },
+    {
+      "id": "fip-cultes",
+      "name": "FIP Cultes",
+      "stream_url": "http://icecast.radiofrance.fr/fipcultes-midfi.mp3",
+      "logo_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/16/FIP_logo_2021.svg/250px-FIP_logo_2021.svg.png",
+      "tags": [
+        "radio-france",
+        "fip",
+        "webradio"
+      ]
+    },
+    {
+      "id": "fip-sacrefrancais",
+      "name": "FIP Sacré français",
+      "stream_url": "http://icecast.radiofrance.fr/fipsacrefrancais-midfi.mp3",
+      "logo_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/16/FIP_logo_2021.svg/250px-FIP_logo_2021.svg.png",
+      "tags": [
+        "radio-france",
+        "fip",
+        "webradio"
+      ]
+    },
+    {
+      "id": "fip-jazz",
+      "name": "FIP Jazz",
+      "stream_url": "http://icecast.radiofrance.fr/fipjazz-midfi.mp3",
+      "logo_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/16/FIP_logo_2021.svg/250px-FIP_logo_2021.svg.png",
+      "tags": [
+        "radio-france",
+        "fip",
+        "webradio"
+      ]
+    },
+    {
+      "id": "fip-rock",
+      "name": "FIP Rock",
+      "stream_url": "http://icecast.radiofrance.fr/fiprock-midfi.mp3",
+      "logo_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/16/FIP_logo_2021.svg/250px-FIP_logo_2021.svg.png",
+      "tags": [
+        "radio-france",
+        "fip",
+        "webradio"
+      ]
+    },
+    {
+      "id": "fip-groove",
+      "name": "FIP Groove",
+      "stream_url": "http://icecast.radiofrance.fr/fipgroove-midfi.mp3",
+      "logo_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/16/FIP_logo_2021.svg/250px-FIP_logo_2021.svg.png",
+      "tags": [
+        "radio-france",
+        "fip",
+        "webradio"
+      ]
+    },
+    {
+      "id": "fip-world",
+      "name": "FIP Monde",
+      "stream_url": "http://icecast.radiofrance.fr/fipworld-midfi.mp3",
+      "logo_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/16/FIP_logo_2021.svg/250px-FIP_logo_2021.svg.png",
+      "tags": [
+        "radio-france",
+        "fip",
+        "webradio"
+      ]
+    },
+    {
+      "id": "fip-nouveautes",
+      "name": "FIP Nouveautés",
+      "stream_url": "http://icecast.radiofrance.fr/fipnouveautes-midfi.mp3",
+      "logo_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/16/FIP_logo_2021.svg/250px-FIP_logo_2021.svg.png",
+      "tags": [
+        "radio-france",
+        "fip",
+        "webradio"
+      ]
+    },
+    {
+      "id": "fip-reggae",
+      "name": "FIP Reggae",
+      "stream_url": "http://icecast.radiofrance.fr/fipreggae-midfi.mp3",
+      "logo_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/16/FIP_logo_2021.svg/250px-FIP_logo_2021.svg.png",
+      "tags": [
+        "radio-france",
+        "fip",
+        "webradio"
+      ]
+    },
+    {
+      "id": "fip-electro",
+      "name": "FIP Electro",
+      "stream_url": "http://icecast.radiofrance.fr/fipelectro-midfi.mp3",
+      "logo_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/16/FIP_logo_2021.svg/250px-FIP_logo_2021.svg.png",
+      "tags": [
+        "radio-france",
+        "fip",
+        "webradio"
+      ]
+    },
+    {
+      "id": "fip-pop",
+      "name": "FIP Pop",
+      "stream_url": "http://icecast.radiofrance.fr/fippop-midfi.mp3",
+      "logo_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/16/FIP_logo_2021.svg/250px-FIP_logo_2021.svg.png",
+      "tags": [
+        "radio-france",
+        "fip",
+        "webradio"
+      ]
+    },
+    {
+      "id": "fip-metal",
+      "name": "FIP Métal",
+      "stream_url": "http://icecast.radiofrance.fr/fipmetal-midfi.mp3",
+      "logo_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/16/FIP_logo_2021.svg/250px-FIP_logo_2021.svg.png",
+      "tags": [
+        "radio-france",
+        "fip",
+        "webradio"
+      ]
+    },
+    {
+      "id": "fip-hiphop",
+      "name": "FIP Hip-Hop",
+      "stream_url": "http://icecast.radiofrance.fr/fiphiphop-midfi.mp3",
+      "logo_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/16/FIP_logo_2021.svg/250px-FIP_logo_2021.svg.png",
+      "tags": [
+        "radio-france",
+        "fip",
+        "webradio"
+      ]
+    },
+    {
+      "id": "france-musique-classiqueplus",
+      "name": "France Musique Classique Plus",
+      "stream_url": "http://icecast.radiofrance.fr/francemusiqueclassiqueplus-midfi.mp3",
+      "logo_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/6/6c/France_Musique_logo_2021.svg/250px-France_Musique_logo_2021.svg.png",
+      "tags": [
+        "radio-france",
+        "classique",
+        "webradio"
+      ]
+    },
+    {
+      "id": "france-musique-baroque",
+      "name": "France Musique Baroque",
+      "stream_url": "http://icecast.radiofrance.fr/francemusiquebaroque-midfi.mp3",
+      "logo_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/6/6c/France_Musique_logo_2021.svg/250px-France_Musique_logo_2021.svg.png",
+      "tags": [
+        "radio-france",
+        "classique",
+        "webradio"
+      ]
+    },
+    {
+      "id": "france-musique-opera",
+      "name": "France Musique Opéra",
+      "stream_url": "http://icecast.radiofrance.fr/francemusiqueopera-midfi.mp3",
+      "logo_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/6/6c/France_Musique_logo_2021.svg/250px-France_Musique_logo_2021.svg.png",
+      "tags": [
+        "radio-france",
+        "classique",
+        "webradio"
+      ]
+    },
+    {
+      "id": "france-musique-pianozen",
+      "name": "France Musique Piano Zen",
+      "stream_url": "http://icecast.radiofrance.fr/francemusiquepianozen-midfi.mp3",
+      "logo_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/6/6c/France_Musique_logo_2021.svg/250px-France_Musique_logo_2021.svg.png",
+      "tags": [
+        "radio-france",
+        "classique",
+        "webradio"
+      ]
+    },
+    {
+      "id": "france-musique-lajazz",
+      "name": "France Musique La Jazz",
+      "stream_url": "http://icecast.radiofrance.fr/francemusiquelajazz-midfi.mp3",
+      "logo_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/6/6c/France_Musique_logo_2021.svg/250px-France_Musique_logo_2021.svg.png",
+      "tags": [
+        "radio-france",
+        "classique",
+        "webradio"
+      ]
+    },
+    {
+      "id": "france-musique-concertsradiofrance",
+      "name": "France Musique Concerts Radio France",
+      "stream_url": "http://icecast.radiofrance.fr/francemusiqueconcertsradiofrance-midfi.mp3",
+      "logo_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/6/6c/France_Musique_logo_2021.svg/250px-France_Musique_logo_2021.svg.png",
+      "tags": [
+        "radio-france",
+        "classique",
+        "webradio"
+      ]
+    },
+    {
+      "id": "france-musique-labo",
+      "name": "France Musique La B.O. (films)",
+      "stream_url": "http://icecast.radiofrance.fr/francemusiquelabo-midfi.mp3",
+      "logo_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/6/6c/France_Musique_logo_2021.svg/250px-France_Musique_logo_2021.svg.png",
+      "tags": [
+        "radio-france",
+        "classique",
+        "webradio"
+      ]
+    },
+    {
+      "id": "france-musique-ocoramonde",
+      "name": "France Musique Ocora Musiques du monde",
+      "stream_url": "http://icecast.radiofrance.fr/francemusiqueocoramonde-midfi.mp3",
+      "logo_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/6/6c/France_Musique_logo_2021.svg/250px-France_Musique_logo_2021.svg.png",
+      "tags": [
+        "radio-france",
+        "classique",
+        "webradio"
+      ]
+    },
+    {
+      "id": "france-musique-lacontemporaine",
+      "name": "France Musique La Contemporaine",
+      "stream_url": "http://icecast.radiofrance.fr/francemusiquelacontemporaine-midfi.mp3",
+      "logo_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/6/6c/France_Musique_logo_2021.svg/250px-France_Musique_logo_2021.svg.png",
+      "tags": [
+        "radio-france",
+        "classique",
+        "webradio"
+      ]
+    },
+    {
+      "id": "rtl",
+      "name": "RTL",
+      "stream_url": "http://streaming-ice.audiomeans.fr/rtl/feed-rtl-mp3-128",
+      "logo_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/8/8f/RTL_Frankreich.svg/250px-RTL_Frankreich.svg.png",
+      "tags": [
+        "generaliste"
+      ]
+    },
+    {
+      "id": "europe-1",
+      "name": "Europe 1",
+      "stream_url": "http://europe1.lmn.fm/europe1.mp3",
+      "logo_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/ae/Europe1_FLAT.png/250px-Europe1_FLAT.png",
+      "tags": [
+        "generaliste",
+        "info"
+      ]
+    },
+    {
+      "id": "rmc",
+      "name": "RMC",
+      "stream_url": "http://audio.bfmtv.com/rmcradio_128.mp3",
+      "logo_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/8/81/Logo_RMC_2002.svg/250px-Logo_RMC_2002.svg.png",
+      "tags": [
+        "info",
+        "sport"
+      ]
+    },
+    {
+      "id": "bfm-business",
+      "name": "BFM Business",
+      "stream_url": "http://audio.bfmtv.com/bfmbusiness_128.mp3",
+      "logo_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/4a/Logo_BFM_Business_2020.svg/250px-Logo_BFM_Business_2020.svg.png",
+      "tags": [
+        "info",
+        "economie"
+      ]
+    },
+    {
+      "id": "bfm-radio",
+      "name": "BFM Radio",
+      "stream_url": "http://audio.bfmtv.com/bfmradio_128.mp3",
+      "logo_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/4a/Logo_BFM_Business_2020.svg/250px-Logo_BFM_Business_2020.svg.png",
+      "tags": [
+        "info",
+        "economie"
+      ]
+    },
+    {
+      "id": "chante-france",
+      "name": "Chante France",
+      "stream_url": "http://chantefrance.ice.infomaniak.ch/chantefrance-128.mp3",
+      "logo_url": "https://upload.wikimedia.org/wikipedia/fr/0/0d/Chante_France_Logo.png",
+      "tags": [
+        "musique",
+        "chanson"
+      ]
+    },
+    {
+      "id": "nostalgie",
+      "name": "Nostalgie",
+      "stream_url": "http://streaming.nrjaudio.fm/oug7girb92oc",
+      "logo_url": "https://upload.wikimedia.org/wikipedia/commons/2/2d/Nostalgie_logo_simple.png",
+      "tags": [
+        "musique",
+        "chanson"
+      ]
+    },
+    {
+      "id": "cherie-fm",
+      "name": "Chérie FM",
+      "stream_url": "http://streaming.nrjaudio.fm/ouuku85n3nje",
+      "logo_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/7/72/Logo_cheriefm.svg/250px-Logo_cheriefm.svg.png",
+      "tags": [
+        "musique"
+      ]
+    },
+    {
+      "id": "rfm",
+      "name": "RFM",
+      "stream_url": "http://rfm.lmn.fm/rfm.mp3",
+      "logo_url": "https://thumb.wikimedia.org/wikipedia/fr/thumb/7/75/RFM.svg/250px-RFM.svg.png",
+      "tags": [
+        "musique"
+      ]
+    },
+    {
+      "id": "radio-classique",
+      "name": "Radio Classique",
+      "stream_url": "http://radioclassique.ice.infomaniak.ch/radioclassique-high.mp3",
+      "logo_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/8/8f/Logo_Radio_Classique.svg/250px-Logo_Radio_Classique.svg.png",
+      "tags": [
+        "classique"
+      ]
+    }
+  ]
+}
