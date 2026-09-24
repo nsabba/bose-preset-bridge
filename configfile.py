@@ -27,6 +27,7 @@ DEFAULTS = {
     # V2
     "catalog_url": DEFAULT_CATALOG_URL,
     "debounce_seconds": 3.0,
+    "event_play_delay_seconds": 0.7,
     "watchdog": True,
     "watchdog_timeout_seconds": 10,
     "auto_reboot": True,
@@ -44,6 +45,7 @@ INI_BRIDGE_KEYS = {
     "log_level": "log_level",
     "catalog_url": "catalog_url",
     "debounce_seconds": "debounce_seconds",
+    "event_play_delay": "event_play_delay_seconds",
     "watchdog": "watchdog",
     "watchdog_timeout": "watchdog_timeout_seconds",
     "auto_reboot": "auto_reboot",

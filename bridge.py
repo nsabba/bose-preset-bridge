@@ -136,7 +136,8 @@ class Player:
 
     # -- public --------------------------------------------------------------
 
-    def play(self, item: dict, allow_reboot: bool = True, remember: bool = True) -> None:
+    def play(self, item: dict, allow_reboot: bool = True, remember: bool = True,
+             delay: float = 0.0) -> None:
         with self._lock:
             self._seq += 1
             seq = self._seq
@@ -147,7 +148,7 @@ class Player:
                 self._set("rebooting", f"reboot in progress: {item['name']} will be played "
                                        "when the speaker is back")
                 return
-        threading.Thread(target=self._run, args=(seq, item, allow_reboot),
+        threading.Thread(target=self._run, args=(seq, item, allow_reboot, delay),
                          name="player", daemon=True).start()
 
     def reboot(self, reason: str, replay: bool) -> bool:
@@ -164,11 +165,15 @@ class Player:
 
     # -- internals -----------------------------------------------------------
 
-    def _run(self, seq: int, item: dict, allow_reboot: bool) -> None:
+    def _run(self, seq: int, item: dict, allow_reboot: bool, delay: float = 0.0) -> None:
         cfg = self.b.cfg
         sp = self.b.speaker
         name = item["name"]
         self._set("starting", f"play {name} ({item['stream_url']})")
+        # After a remote press the speaker needs ~0.2 s to process its own selection;
+        # a Play sent before that plays without metadata (no station name on the display).
+        if delay and not self._sleep(seq, delay):
+            return
         if not cfg["watchdog"]:
             if sp.play_url(item["stream_url"], name, item.get("logo_url", "")):
                 self.playing_item = item
@@ -213,6 +218,7 @@ class Player:
         sp = self.b.speaker
         name = item["name"]
         power_sent = False
+        metadata_fixed = False
         attempt = 0
         while attempt < 2:
             attempt += 1
@@ -222,6 +228,12 @@ class Player:
             if not sent:
                 log.warning("[player] %s: UPnP Play not accepted (attempt %d)", name, attempt)
             res, np = self._wait_playing(seq)
+            if res == "ok" and np.get("location") == "unplayable location" and not metadata_fixed:
+                # Playing, but the speaker dropped our metadata (station name): send it again.
+                log.info("[player] %s plays without its name on the speaker -> sending it again", name)
+                metadata_fixed = True
+                attempt -= 1
+                continue
             if res == "ok":
                 self.playing_item = item
                 self._set("playing", f"{name} is playing (checked on /now_playing, attempt {attempt})")
@@ -604,7 +616,7 @@ class Bridge:
             return
         log.info("Preset %d pressed (%s) -> %s", n, how, item["name"])
         self.last_preset = {"id": n, "name": item["name"], "at": now_iso(), "inferred": inferred}
-        self.player.play(item)
+        self.player.play(item, delay=self.cfg["event_play_delay_seconds"])
 
     def play_preset(self, n: int) -> bool:
         item = self.preset_item(n)

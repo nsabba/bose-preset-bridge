@@ -101,6 +101,7 @@ Le preset 1 n'est jamais réécrit si l'écriture d'un autre preset a échoué p
 |---|---|---|---|
 | `catalog_url` | `catalog_url` | GitHub raw de ce dépôt | catalogue de la page web |
 | `debounce_seconds` | `debounce_seconds` | 3 | anti-rebond |
+| `event_play_delay` | `event_play_delay_seconds` | 0.7 | attente après un appui avant la lecture (sinon le nom de la station ne s'affiche pas) |
 | `watchdog` | `watchdog` | true | vérification de lecture |
 | `watchdog_timeout` | `watchdog_timeout_seconds` | 10 | attente de `PLAY_STATE` |
 | `auto_reboot` | `auto_reboot` | true | reboot si moteur bloqué |

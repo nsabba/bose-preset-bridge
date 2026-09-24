@@ -32,7 +32,7 @@ Séquence observée pour **un appui sur le preset 5** (contenu `UPNP` stocké) :
 
 ```xml
 <updates deviceID="0CAE7D5422F4"><nowSelectionUpdated><preset id="5"><ContentItem source="UPNP" location="http://..." sourceAccount="UPnPUserName" isPresetable="true">...</ContentItem></preset></nowSelectionUpdated></updates>
-<updates deviceID="0CAE7D5422F4"><errorUpdate>...</errorUpdate></updates>
+<errorUpdate deviceID="0CAE7D5422F4"><error value="1036" name="UNABLE_TO_PROCESS_NOT_LOGGED_IN" severity="Unrecoverable">UpnpRcvdContentItemInWrongState</error></errorUpdate>
 <updates deviceID="0CAE7D5422F4"><nowSelectionUpdated><preset id="0"><ContentItem source="INVALID_SOURCE" .../></preset></nowSelectionUpdated></updates>
 <updates deviceID="0CAE7D5422F4"><nowPlayingUpdated><nowPlaying source="INVALID_SOURCE">...</nowPlaying></nowPlayingUpdated></updates>
 ```
@@ -40,6 +40,11 @@ Séquence observée pour **un appui sur le preset 5** (contenu `UPNP` stocké) :
 Règles du bridge :
 
 * **Déclencheur** : `nowSelectionUpdated` avec `preset id` entre 1 et 6. Ignorer `id="0"`.
+* **Délai avant lecture** : attendre 0,7 s après l'événement avant SetAVTransportURI. L'enceinte met
+  ~0,2 s à traiter sa propre sélection (`errorUpdate` puis `nowSelectionUpdated preset id="0"`) ; un
+  Play envoyé avant joue bien, mais sans métadonnées : `/now_playing` montre
+  `location="unplayable location"` et un `<track>` vide, donc pas de nom sur l'écran. Si cela arrive
+  malgré tout, renvoyer SetAVTransportURI + Play une fois (le watchdog le fait).
 * **Debounce** : un même preset reçu moins de 3 s après le précédent est ignoré (l'enceinte
   envoie parfois deux événements identiques dans la même seconde).
 * **Repli** (enceinte encore sur le cloud) : si un `nowPlayingUpdated` porte un `ContentItem`
@@ -94,6 +99,11 @@ SOAPAction: "urn:schemas-upnp-org:service:AVTransport:1#SetAVTransportURI"
 ```
 
 Réponse attendue : `HTTP 200` (enveloppe SOAP `SetAVTransportURIResponse`).
+
+Effet sur `/now_playing` : `dc:title` → `<itemName>` et `<track>` (texte affiché par l'écran de
+l'enceinte) ; `upnp:artist` → `<artist>`, `upnp:album` → `<album>` ; `upnp:albumArtURI` →
+`<art artImageStatus="IMAGE_PRESENT">url</art>` (pour les applis seulement : l'écran de la
+SoundTouch 20 n'affiche que du texte).
 
 ### 2.2 Play
 
