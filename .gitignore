@@ -12,3 +12,4 @@ presets_backup_*.xml
 esp32/.pio/
 esp32/.vscode/
 esp32/src/bridge/page_html.h
+esp32/src/bridge/defaults_gen.h
