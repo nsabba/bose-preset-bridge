@@ -9,3 +9,6 @@ dist/
 presets_backup_*.xml
 .firewall_requested
 .claude/
+esp32/.pio/
+esp32/.vscode/
+esp32/src/bridge/page_html.h
