@@ -84,6 +84,13 @@ int main() {
   CHECK(parse::ssdpBoseMac(ssdp) == "0CAE7D5422F4");
   CHECK(parse::ssdpBoseMac("HTTP/1.1 200 OK\r\nUSN:uuid:1234::upnp:rootdevice\r\n\r\n") == "");
 
+  // --- réponse /presets tronquée (Wi-Fi coupé) : erreur, pas « aucun preset »
+  String full = load("presets.xml");
+  CHECK(parse::presets(full, ps) && ps.size() == 6);
+  CHECK(!parse::presets(full.substring(0, full.length() / 2), ps));
+  CHECK(!parse::presets("", ps));
+  CHECK(parse::presets("<presets />", ps) && ps.empty());   // enceinte réinitialisée : légitimement vide
+
   // --- échappement aller-retour
   CHECK(xml::decode(xml::escape("a&b<c>\"d'e")) == "a&b<c>\"d'e");
   CHECK(xml::escape("La Musique d'Inter") == "La Musique d&apos;Inter");

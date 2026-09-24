@@ -32,9 +32,12 @@ inline bool nowPlaying(const String &body, NowPlaying &np) {
   return true;
 }
 
-// GET /presets (et réponse de POST /storePreset)
-inline void presets(const String &body, std::vector<SpeakerPreset> &out) {
+// GET /presets (et réponse de POST /storePreset). Renvoie false si la réponse est incomplète
+// (Wi-Fi coupé en cours de lecture) : il ne faut surtout pas en conclure que les presets sont vides.
+inline bool presets(const String &body, std::vector<SpeakerPreset> &out) {
   out.clear();
+  if (body.indexOf("</presets>") < 0 && body.indexOf("<presets/>") < 0 && body.indexOf("<presets />") < 0)
+    return false;
   int pos = 0;
   while ((pos = xml::findTag(body, "preset", pos)) >= 0) {   // "<presets>" n'est pas pris
     int next = xml::findTag(body, "preset", pos + 7);
@@ -50,6 +53,7 @@ inline void presets(const String &body, std::vector<SpeakerPreset> &out) {
     if (p.id >= 1 && p.id <= 6) out.push_back(p);
     pos = stop;
   }
+  return true;
 }
 
 inline bool isCloud(const SpeakerPreset &p) {

@@ -74,7 +74,10 @@ bool presets(std::vector<SpeakerPreset> &out) {
   String body;
   out.clear();
   if (httpGet(base() + "/presets", body, 5000) != 200) return false;
-  parse::presets(body, out);
+  if (!parse::presets(body, out)) {
+    logf("GET /presets : réponse incomplète (%u octets), ignorée", body.length());
+    return false;
+  }
   return true;
 }
 

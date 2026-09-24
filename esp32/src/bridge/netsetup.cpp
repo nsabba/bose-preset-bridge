@@ -4,12 +4,30 @@
 #include <ESPmDNS.h>
 #include <WiFi.h>
 #include <WiFiManager.h>
+#include <esp_wifi.h>
 
 #include "common.h"
 
 static const char *HOSTNAME = "bose-bridge";
 static const char *AP_NAME = "Bose-Bridge-Setup";
 static const int BOOT_PIN = 0;          // bouton BOOT de la carte
+
+// Box + répéteur diffusent souvent le même nom de réseau. Par défaut l'ESP32 se connecte au
+// premier point d'accès trouvé, pas au plus fort : constaté chez le beau-père le 24/09, carte à
+// 2 m du répéteur mais accrochée à la box (-80 dBm), avec des coupures. On impose un balayage
+// de tous les canaux et le choix du signal le plus fort.
+static void preferStrongestAp() {
+  wifi_config_t conf;
+  if (esp_wifi_get_config(WIFI_IF_STA, &conf) != ESP_OK) return;
+  conf.sta.scan_method = WIFI_ALL_CHANNEL_SCAN;
+  conf.sta.sort_method = WIFI_CONNECT_AP_BY_SIGNAL;
+  conf.sta.bssid_set = false;
+  esp_wifi_set_config(WIFI_IF_STA, &conf);
+}
+
+static String apText() {
+  return WiFi.BSSIDstr() + ", canal " + String(WiFi.channel()) + ", " + String(WiFi.RSSI()) + " dBm";
+}
 
 static void portal() {
   WiFiManager wm;
@@ -54,11 +72,13 @@ void netBegin() {
   } else {
     // Wi-Fi déjà configuré : on n'ouvre JAMAIS le portail tout seul (une box redémarrée ne
     // doit pas bloquer le bridge), on attend et la reconnexion automatique fait le reste.
+    preferStrongestAp();
     WiFi.begin();
     for (int i = 0; i < 200 && WiFi.status() != WL_CONNECTED; i++) delay(100);
   }
   if (WiFi.status() == WL_CONNECTED)
-    logf("Wi-Fi « %s » connecté, IP %s, %d dBm", WiFi.SSID().c_str(), WiFi.localIP().toString().c_str(), WiFi.RSSI());
+    logf("Wi-Fi « %s » connecté, IP %s (point d'accès %s)", WiFi.SSID().c_str(),
+         WiFi.localIP().toString().c_str(), apText().c_str());
   else
     logf("Wi-Fi pas encore connecté : nouvelle tentative en arrière-plan");
 
@@ -68,15 +88,51 @@ void netBegin() {
   for (int i = 0; i < 30 && !timeValid(); i++) delay(100);   // 3 s max : l'heure n'est pas indispensable
 }
 
+// Toutes les 2 min, si le signal est faible (< -70 dBm), balayage en arrière-plan : si un point
+// d'accès du même réseau est nettement plus fort (+8 dB), on bascule dessus.
+static void roamingCheck(bool connected) {
+  static uint32_t lastCheck = 0;
+  static bool scanning = false;
+  if (!connected) { scanning = false; return; }
+  if (!scanning) {
+    if (millis() - lastCheck < 120000) return;
+    lastCheck = millis();
+    if (WiFi.RSSI() >= -70) return;
+    if (WiFi.scanNetworks(true, false, false, 300) == WIFI_SCAN_FAILED) return;
+    scanning = true;
+    return;
+  }
+  int n = WiFi.scanComplete();
+  if (n == WIFI_SCAN_RUNNING) return;
+  scanning = false;
+  int best = -1, current = WiFi.RSSI();
+  String ssid = WiFi.SSID(), bssid = WiFi.BSSIDstr();
+  for (int i = 0; i < n; i++)
+    if (WiFi.SSID(i) == ssid && WiFi.BSSIDstr(i) != bssid && (best < 0 || WiFi.RSSI(i) > WiFi.RSSI(best))) best = i;
+  if (best >= 0 && WiFi.RSSI(best) >= current + 8) {
+    logf("Wi-Fi : point d'accès %s plus fort (%d dBm contre %d) : bascule", WiFi.BSSIDstr(best).c_str(),
+         WiFi.RSSI(best), current);
+    uint8_t target[6];
+    memcpy(target, WiFi.BSSID(best), 6);
+    int32_t channel = WiFi.channel(best);
+    String psk = WiFi.psk();
+    WiFi.scanDelete();
+    WiFi.begin(ssid.c_str(), psk.c_str(), channel, target);
+    return;
+  }
+  WiFi.scanDelete();
+}
+
 void netLoop() {
   static bool wasConnected = true;
   static uint32_t pressedSince = 0;
   bool connected = WiFi.status() == WL_CONNECTED;
   if (connected != wasConnected) {
-    if (connected) logf("Wi-Fi reconnecté, IP %s", WiFi.localIP().toString().c_str());
+    if (connected) logf("Wi-Fi reconnecté, IP %s (point d'accès %s)", WiFi.localIP().toString().c_str(), apText().c_str());
     else logf("Wi-Fi perdu");
     wasConnected = connected;
   }
+  roamingCheck(connected);
   // BOOT maintenu 5 s : efface le Wi-Fi et redémarre sur le portail
   if (digitalRead(BOOT_PIN) == LOW) {
     if (!pressedSince) pressedSince = millis();
