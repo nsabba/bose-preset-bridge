@@ -264,7 +264,7 @@ les demandes sont mémorisées et la dernière est jouée au retour.
 
 ---
 
-## 6. API HTTP du bridge (port 8888), servie aussi par l'ESP32
+## 6. API HTTP du bridge (port 8888 sur PC, 80 sur ESP32)
 
 JSON UTF-8 partout. Pas d'authentification (réseau local). Erreurs :
 `{"ok": false, "error": "<code>", "message": "<texte>"}` avec un statut 4xx/5xx.
@@ -307,6 +307,27 @@ Corps ≤ 8 Ko.
 }
 ```
 
+**Écriture différée (ESP32).** L'ESP32 n'écrit pas dans l'enceinte pendant la requête HTTP (son
+serveur web ne doit jamais bloquer). Deux réponses sont donc possibles, et la page gère les deux :
+
+* `PUT /api/presets/{n}` → `"speaker": "pending"` ;
+* `POST /api/rewrite-speaker-presets` → `202 {"ok":true,"pending":true,"method":"upnp"}`.
+
+Le résultat apparaît ensuite dans `GET /api/status` → `last_rewrite`
+(`{"at","ok","reason","method","results":{"n":{"ok","message"}}}`) : la page mémorise
+`last_rewrite` avant la requête et interroge `/api/status` toutes les 1,5 s (30 s max) jusqu'à ce
+qu'il change.
+
+**Fonctions optionnelles.** `GET /api/status` peut contenir `"features": [...]`. La page n'affiche
+une section que si la fonction est annoncée (le bridge PC n'en annonce aucune) :
+
+| Fonction | Routes | Contenu |
+|---|---|---|
+| `device` | champ `device` de `/api/status` | `{uptime_s, rssi, ssid, ip, hostname, free_heap, min_free_heap, reset_reason, boot_count, time_synced, speaker_discovered}` |
+| `log` | `GET /api/log` | `{"lines": ["[13:05:22] ...", ...]}` (200 dernières lignes, de la plus ancienne à la plus récente) |
+| `settings` | `GET /api/settings`, `PUT /api/settings` (JSON partiel), `POST /api/discover` (202) | `speaker_host` (courante), `speaker_discovered`, `speaker_host_fallback`, `speaker_mac`, `catalog_url`, `preset_write_method`, `debounce_seconds`, `event_play_delay_seconds`, `watchdog`, `watchdog_timeout_seconds`, `auto_reboot`, `auto_reboot_min_interval_seconds`, `rewrite_presets_on_startup`, `resume_on_power_on`, `ota_password_set` ; en écriture aussi `ota_password` (+ `ota_password_current` s'il y en a déjà un) |
+| `ota` | `POST /api/ota` | multipart/form-data, champ fichier = `firmware.bin`, en-tête `X-OTA-Password` ; `200 {"ok":true}` puis redémarrage 1,5 s plus tard ; `403 bad_password \| ota_disabled` ; `500 ota_failed` |
+
 `now_playing` vaut `null` si l'enceinte ne répond pas (mis en cache 2 s). `player.state` ∈
 `idle | starting | playing | retrying | rebooting | failed`.
 
@@ -331,11 +352,17 @@ partiel → 200 + `audio/mpeg`, signale redirections, HTTPS, HLS) et chaque logo
 
 ---
 
-## 8. Notes pour l'ESP32
+## 8. Version ESP32
 
-* Stockage NVS : les 6 presets `{name, stream_url, logo_url}` + `bose_host` + les réglages de la
-  config (`preset_write_method`, `watchdog_timeout`, `auto_reboot_min_interval`, `debounce_seconds`).
-* `web/index.html` peut être servi tel quel (21 Ko, 7 Ko en gzip avec `Content-Encoding: gzip`).
-* Horloge : l'anti-boucle n'a besoin que d'un compteur monotone (`millis()`), pas de l'heure.
-* `tools/fake_soundtouch.py` simule l'enceinte (y compris le blocage et le reboot) pour tester sans
-  matériel ; il écoute sur 127.0.0.1 : lancer le firmware en simulation ou adapter `HOST`.
+Voir [esp32/README.md](esp32/README.md). Points propres à l'ESP32 :
+
+* **Découverte de l'enceinte (SSDP)** : `M-SEARCH * HTTP/1.1` envoyé en UDP à
+  `239.255.255.250:1900` avec `MAN: "ssdp:discover"`, `MX: 2`,
+  `ST: urn:schemas-upnp-org:device:MediaRenderer:1`. Réponse de la SoundTouch 20 (relevée le 24/09) :
+  `USN:uuid:BO5EBO5E-F00D-F00D-FEED-0CAE7D5422F4::urn:schemas-upnp-org:device:MediaRenderer:1`,
+  `Location: http://192.168.1.10:8091/XD/BO5EBO5E-F00D-F00D-FEED-0CAE7D5422F4.xml`. La MAC est la
+  fin de l'UDN, l'IP celle de l'expéditeur.
+* **Alimentation par l'enceinte** : avant un reboot automatique, le preset à rejouer est noté en NVS
+  (`rp_id`, `rp_epoch`, `rp_boot`) et rejoué au démarrage suivant de l'ESP32 s'il a moins de 5 min ;
+  l'anti-boucle est aussi persistant (`ar_epoch`, `ar_boot`).
+* Page servie gzippée (`Content-Encoding: gzip`, 7 Ko), générée à la compilation depuis `web/index.html`.

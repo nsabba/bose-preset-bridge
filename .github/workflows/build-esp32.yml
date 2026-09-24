@@ -1,0 +1,57 @@
+name: Build ESP32 firmware
+
+on:
+  push:
+    branches: [esp32, main]
+    paths:
+      - "esp32/**"
+      - "web/index.html"
+      - "config.yaml"
+      - ".github/workflows/build-esp32.yml"
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - uses: actions/cache@v4
+        with:
+          path: ~/.platformio
+          key: pio-${{ hashFiles('esp32/platformio.ini') }}
+
+      - name: Install PlatformIO
+        run: pip install platformio
+
+      - name: Parsing tests (host)
+        run: esp32/test/host/run.sh
+
+      - name: Build power_test and bridge
+        run: pio run -d esp32 -e power_test -e bridge
+
+      - name: Package
+        run: |
+          mkdir -p out
+          boot_app0=~/.platformio/packages/framework-arduinoespressif32/tools/partitions/boot_app0.bin
+          for env in bridge power_test; do
+            b=esp32/.pio/build/$env
+            # image complète (premier flash, adresse 0x0) et image applicative (mise à jour OTA)
+            pio pkg exec -p tool-esptoolpy -- esptool.py --chip esp32 merge_bin \
+              -o out/$env-full.bin --flash_mode dio --flash_size 4MB \
+              0x1000 $b/bootloader.bin 0x8000 $b/partitions.bin 0xe000 $boot_app0 0x10000 $b/firmware.bin
+            cp $b/firmware.bin out/$env-ota.bin
+          done
+          ls -l out
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: bose-bridge-esp32
+          path: out/*.bin
+          retention-days: 30

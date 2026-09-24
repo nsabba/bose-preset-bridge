@@ -161,4 +161,4 @@ Bouton preset   ->  WebSocket ws://<IP>:8080 (gabbo) : <nowSelectionUpdated><pre
 | `pyyaml` | lecture de `config.yaml` |
 | `pystray`, `pillow` | icône Windows |
 
-Prochaine étape prévue : portage sur ESP32 (même logique, même page, même API ; voir PROTOCOL.md § 8).
+Version ESP32 (remplace le PC, même logique, même page, même API) : voir [esp32/README.md](esp32/README.md).
