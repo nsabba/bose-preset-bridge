@@ -13,7 +13,7 @@
 
 #include "parse.h"   // NowPlaying, SpeakerPreset
 
-#define BRIDGE_VERSION "esp32-1.0.0"
+#define BRIDGE_VERSION "esp32-1.0.1"
 
 static const int MAX_URL = 512;     // longueur max d'une URL de flux ou de logo
 static const int MAX_NAME = 64;     // longueur max d'un nom de station
